@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyjiit"
-version = "0.1.0a4"
+version = "0.1.0a5"
 description = "Python wrapper for JIIT webportal"
 authors = ["Harsh Sharma <harsh@codelif.in>"]
 license = "MIT License"
