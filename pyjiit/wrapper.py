@@ -25,9 +25,11 @@ def authenticated(method):
     def wrapper(self, *args, **kwargs):
         if self.session is None:
             raise NotLoggedIn
-
-        if self.session.expiry < datetime.now():
-            raise SessionExpired
+        
+        # Commenting this because rn the webportal api is bugged, 
+        # and returns wrong expiry time for prefectly valid cookies
+        # if self.session.expiry < datetime.now():
+        #     raise SessionExpired
 
         return method(self, *args, **kwargs)
     wrapper.__doc__ = method.__doc__
@@ -97,8 +99,13 @@ class Webportal:
         
 
         resp = requests.request(*args, **kwargs).json()
+        if type(resp["status"]) is int and resp["status"] == 401:
+            raise SessionExpired(resp["error"])
+
         if resp["status"]["responseStatus"] != "Success":
             raise exception("status:\n"+pformat(resp["status"]))
+        
+
 
         return resp
 
