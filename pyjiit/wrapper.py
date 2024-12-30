@@ -206,6 +206,7 @@ class Webportal:
             "registrationid": semester.registration_id,
             "stynumber": header.stynumber
         }
+        payload = serialize_payload(payload)
         
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
         
@@ -242,6 +243,8 @@ class Webportal:
             "instituteid": self.session.instituteid,
             "studentid": self.session.memberid
         }
+        payload = serialize_payload(payload)
+        #meow
 
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
         
@@ -261,6 +264,7 @@ class Webportal:
             "studentid": self.session.memberid,
             "registrationid": semester.registration_id
         }
+        payload = serialize_payload(payload)
 
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
@@ -280,6 +284,7 @@ class Webportal:
             "instituteid": self.session.instituteid,
             "memberid": self.session.memberid
         }
+        payload = serialize_payload(payload)
         
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
@@ -298,6 +303,7 @@ class Webportal:
             "instituteid": self.session.instituteid,
             "registationid": semester.registration_id # not a typo
         }
+        payload = serialize_payload(payload)
 
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
@@ -317,6 +323,7 @@ class Webportal:
             "registrationid": exam_event.registration_id,
             "exameventid": exam_event.exam_event_id
         }
+        payload = serialize_payload(payload)
 
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
