@@ -1,30 +1,71 @@
-name: "Sphinx: Render docs"
+name: "Sphinx: build && deploy docs"
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  docs:
+  build:
+    name: Build Sphinx docs
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-      - name: Install dependencies
-        run: |
-          pip install sphinx==7.4.7 requests pycryptodome
-          pip install -r docs/requirements.txt
-          
-      - name: Sphinx build
-        run: |
-          sphinx-build docs _build
-          echo "pyjiit.codelif.in" > _build/CNAME
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/
-          force_orphan: true
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Cache Poetry and pip
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock','**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install project + docs dependencies
+        run: poetry install --no-interaction --no-ansi --with docs
+
+      - name: Build HTML docs
+        working-directory: docs
+        run: |
+          make html
+          echo "pyjiit.codelif.in" > _build/html/CNAME
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs/_build/html
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Set up GitHub Pages
+        uses: actions/setup-pages@v4
+
+      - name: Deploy to Pages
+        uses: actions/upload-pages-deployment@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
