@@ -3,7 +3,7 @@ from pprint import pformat
 from pyjiit.encryption import serialize_payload, generate_local_name
 from pyjiit.exam import ExamEvent
 from pyjiit.registration import Registrations
-from pyjiit.token import Captcha
+from pyjiit.tokens import Captcha
 from pyjiit.default import CAPTCHA
 from pyjiit.exceptions import APIError, LoginError, NotLoggedIn, SessionExpired, AccountAPIError
 from pyjiit.attendance import AttendanceMeta, AttendanceHeader, Semester
@@ -25,8 +25,8 @@ def authenticated(method):
     def wrapper(self, *args, **kwargs):
         if self.session is None:
             raise NotLoggedIn
-        
-        # Commenting this because rn the webportal api is bugged, 
+
+        # Commenting this because rn the webportal api is bugged,
         # and returns wrong expiry time for prefectly valid cookies
         # if self.session.expiry < datetime.now():
         #     raise SessionExpired
@@ -42,22 +42,22 @@ class WebportalSession:
     def __init__(self, resp: dict) -> None:
         self.raw_response = resp
         self.regdata: dict = resp['regdata']
-        
+
         institute = self.regdata['institutelist'][0]
         self.institute: str = institute['label']
         self.instituteid: str = institute['value']
         self.memberid: str = self.regdata['memberid']
-        
+
         self.userid: str = self.regdata['userid']
 
         self.token: str = self.regdata['token']
         expiry_timestamp = json.loads(base64.b64decode(self.token.split(".")[1]))['exp']
         self.expiry = datetime.fromtimestamp(expiry_timestamp)
-            
+
         self.clientid = self.regdata["clientid"]
         self.membertype = self.regdata["membertype"]
         self.name = self.regdata["name"]
-    
+
     def get_headers(self):
         """
         :returns: A dictionary with Authorization HTTP headers
@@ -69,13 +69,13 @@ class WebportalSession:
 
 class Webportal:
     """
-    Class which implements the functionality for 
+    Class which implements the functionality for
     JIIT Webportal
     """
 
     def __init__(self) -> None:
         self.session = None
-    
+
     def __str__(self) -> str:
         return "Driver Class for JIIT Webportal"
 
@@ -86,7 +86,7 @@ class Webportal:
             exception = kwargs["exception"]
             kwargs.pop("exception")
 
-        if kwargs.get("authenticated"): 
+        if kwargs.get("authenticated"):
             header = self.session.get_headers() # Assumes calling method is authenticated
             kwargs.pop("authenticated")
         else:
@@ -96,7 +96,7 @@ class Webportal:
             kwargs["headers"].update(header)
         else:
             kwargs["headers"] = header
-        
+
 
         resp = requests.request(*args, **kwargs).json()
         if type(resp["status"]) is int and resp["status"] == 401:
@@ -104,7 +104,7 @@ class Webportal:
 
         if resp["status"]["responseStatus"] != "Success":
             raise exception("status:\n"+pformat(resp["status"]))
-        
+
 
 
         return resp
@@ -119,7 +119,7 @@ class Webportal:
         :raises LoginError: Raised for any error in the remote API while Logging in
         """
         pretoken_endpoint = "/token/pretoken-check"
-        token_endpoint = "/token/generate-token1"     
+        token_endpoint = "/token/generate-token1"
 
 
         payload = {
@@ -139,7 +139,7 @@ class Webportal:
         payload = serialize_payload(payload)
 
         resp = self.__hit("POST", API+token_endpoint, data=payload, exception=LoginError)
-        
+
         self.session = WebportalSession(resp['response'])
 
         return self.session
@@ -154,7 +154,7 @@ class Webportal:
         resp = self.__hit("GET", API+ENDPOINT)
 
         return Captcha.from_json(resp["response"])
-    
+
     @authenticated
     def get_student_bank_info(self):
         """
@@ -184,7 +184,7 @@ class Webportal:
             "instituteid": self.session.instituteid,
             "membertype": self.session.membertype
         }
-        
+
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
         return AttendanceMeta(resp["response"])
@@ -198,7 +198,7 @@ class Webportal:
         :raises APIError: Raised for generic API error
         """
         ENDPOINT = "/StudentClassAttendance/getstudentattendancedetail"
-        
+
         payload = {
             "clientid": self.session.clientid,
             "instituteid": self.session.instituteid,
@@ -207,9 +207,9 @@ class Webportal:
             "stynumber": header.stynumber
         }
         payload = serialize_payload(payload)
-        
+
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
-        
+
         return resp["response"]
 
     @authenticated
@@ -230,7 +230,7 @@ class Webportal:
 
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True, exception=AccountAPIError)
 
-    
+
     @authenticated
     def get_registered_semesters(self):
         """
@@ -247,7 +247,7 @@ class Webportal:
         #meow
 
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
-        
+
         return [Semester.from_json(i) for i in resp["response"]["registrations"]]
 
     @authenticated
@@ -270,7 +270,7 @@ class Webportal:
 
         return Registrations(resp["response"])
 
-    
+
     @authenticated
     def get_semesters_for_exam_events(self):
         """
@@ -285,7 +285,7 @@ class Webportal:
             "memberid": self.session.memberid
         }
         payload = serialize_payload(payload)
-        
+
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
         return [Semester.from_json(i) for i in resp["response"]["semesterCodeinfo"]["semestercode"]]
