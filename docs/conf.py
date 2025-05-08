@@ -10,9 +10,9 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'pyjiit'
-copyright = '2024, Harsh Sharma'
+copyright = '2025, Harsh Sharma'
 author = 'Harsh Sharma'
-release = '0.1.0a5'
+release = '0.1.0a6'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
