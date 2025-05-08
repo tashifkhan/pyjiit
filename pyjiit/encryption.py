@@ -13,7 +13,7 @@ def generate_key(date=None) -> bytes:
 def generate_local_name(date=None) -> str:
     """Returns LocalName Header required for every HTTP request sent to the server"""
     name_bytes = (pyjiit.utils.get_random_char_seq(4) + pyjiit.utils.generate_date_seq(date) + pyjiit.utils.get_random_char_seq(5)).encode()
-    
+
     return base64.b64encode(encrypt(name_bytes)).decode()
 
 
@@ -32,7 +32,7 @@ def deserialize_payload(payload: str) -> dict:
     """Returns decrypted json from payload"""
     pbytes = base64.b64decode(payload)
     raw = decrypt(pbytes)
-    
+
     return json.loads(raw)
 
 
@@ -46,5 +46,4 @@ def serialize_payload(payload: dict) -> str:
 
 if __name__ == "__main__":
     import sys
-    print(deserialize_payload(sys.argv[1], True))
-
+    print(deserialize_payload(sys.argv[1]))
