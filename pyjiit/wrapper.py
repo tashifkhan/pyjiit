@@ -328,3 +328,42 @@ class Webportal:
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
 
         return resp["response"]
+
+    @authenticated
+    def get_semesters_for_marks(self):
+        """
+        :returns: A list of Semester objects
+        :raises APIError: Raised for generic API error
+        """
+        ENDPOINT = "/studentcommonsontroller/getsemestercode-exammarks"
+
+        payload = {
+            "instituteid": self.session.instituteid,
+            "memberid": self.session.memberid
+        }
+        payload = serialize_payload(payload)
+
+        resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
+
+        return [Semester.from_json(i) for i in resp["response"]["semestercode"]]
+    
+    @authenticated
+    def download_marks(self, semester: Semester):
+        """
+        :returns: Raw bytes of the PDF file content
+        :raises APIError: Raised for generic API error
+        """
+        ENDPOINT = (
+            f"/studentsexamview/printstudent-exammarks/"
+            f"{self.session.instituteid}/"
+            f"{semester.registration_id}/"
+            f"{semester.registration_code}"
+        )
+        url = API + ENDPOINT
+        headers = self.session.get_headers() 
+
+        response = requests.get(url, headers=headers, stream=True)
+        if response.status_code == 200:
+            return response.content
+        else:
+            raise APIError(f"Failed to download marks PDF: {response.status_code} {response.text}")
