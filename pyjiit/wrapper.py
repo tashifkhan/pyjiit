@@ -367,3 +367,74 @@ class Webportal:
             return response.content
         else:
             raise APIError(f"Failed to download marks PDF: {response.status_code} {response.text}")
+
+    @authenticated
+    def get_semesters_for_grade_card(self):
+        """
+        :returns: A list of Semester objects.
+        :raises APIError: Raised for generic API error
+        """
+        ENDPOINT = "/studentgradecard/getregistrationList"
+        payload = {
+            "instituteid": self.session.instituteid,
+                   }
+        payload = serialize_payload(payload)
+        
+        resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
+
+        return [Semester.from_json(i) for i in resp["response"]["registrations"]]
+    
+
+    @authenticated
+    def __get_program_and_branch_id(self):
+        """
+        :returns: Dictionary containing Branch ID and Program ID for grade card.
+        :raises APIError: Raised for generic API error
+        """
+        ENDPOINT = "/studentgradecard/getstudentinfo"
+        payload = {
+            "instituteid": self.session.instituteid
+        }
+        payload = serialize_payload(payload)
+        resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
+        program_id = resp["response"]["studentinfo"]["programid"]
+        branch_id = resp["response"]["studentinfo"]["branchid"]        
+        return {"programid" : program_id, "branchid": branch_id};
+
+    @authenticated
+    def get_grade_card(self, semester: Semester):
+        """
+        :params semester: A Semester object
+        :returns: Student grade card
+        :raises APIError: Raised for generic API error 
+        """
+        program_and_branch_id = self.__get_program_and_branch_id()
+        program_id = program_and_branch_id["programid"]
+        branch_id = program_and_branch_id["branchid"]
+        ENDPOINT = "/studentgradecard/showstudentgradecard"
+        payload = {
+            "branchid": branch_id,
+            "instituteid": self.session.instituteid,
+            "programid": program_id,
+            "registrationid": semester.registration_id
+        }
+        payload = serialize_payload(payload)
+        resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
+        return resp["response"]
+    
+    @authenticated
+    def get_sgpa_cgpa(self, stynumber: int = 0):
+        """
+        :params stynumber: An integer containing the number of the semester
+        :returns: Dictionary containing SGPA and CGPA
+        :raises APIError: Raised for generic API error
+        """
+        ENDPOINT = "/studentsgpacgpa/getallsemesterdata"
+        payload = {
+            "instituteid": self.session.instituteid,
+            "studentid": self.session.memberid,
+            "stynumber": stynumber
+        }
+        payload = serialize_payload(payload)
+        resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
+        return resp["response"]
