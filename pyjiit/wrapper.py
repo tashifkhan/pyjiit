@@ -438,3 +438,22 @@ class Webportal:
         payload = serialize_payload(payload)
         resp = self.__hit("POST", API+ENDPOINT, json=payload, authenticated=True)
         return resp["response"]
+    
+    @authenticated
+    def get_fines_msc_charges(self):
+        """
+        fetches any pending miscellaneous charges/fines for the logged-in student.
+        :returns: The raw 'response' dict from the API.
+                  If there are no pending payments, the API returns
+                  status: Failure with error "NO APPROVED REQUEST FOUND".
+        :raises APIError: on any non-Success responseStatus.
+        """
+        ENDPOINT = "/collectionpendingpayments/getpendingpaymentsdata"
+        payload_dict = {
+            "instituteid": self.session.instituteid,
+            "studentid": self.session.memberid,
+        }
+        enc_payload = serialize_payload(payload_dict)
+        resp = self.__hit("POST", API + ENDPOINT, json=enc_payload, authenticated=True)
+        return resp["response"]
+
