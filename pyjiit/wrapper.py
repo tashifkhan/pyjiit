@@ -105,8 +105,6 @@ class Webportal:
         if resp["status"]["responseStatus"] != "Success":
             raise exception("status:\n"+pformat(resp["status"]))
 
-
-
         return resp
 
 
@@ -457,3 +455,16 @@ class Webportal:
         resp = self.__hit("POST", API + ENDPOINT, json=enc_payload, authenticated=True)
         return resp["response"]
 
+    @authenticated
+    def get_fee_summary(self):
+        """
+        fetches the fee summary for the logged-in student.
+        :returns: The raw 'response' dict from the API.
+        :raises APIError: on any non-Success responseStatus.
+        """
+        ENDPOINT = "/studentfeeledger/loadfeesummary"
+        payload_dict = {
+            "instituteid": self.session.instituteid,
+        }
+        resp = self.__hit("POST", API + ENDPOINT, json=payload_dict, authenticated=True)
+        return resp["response"]
