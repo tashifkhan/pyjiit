@@ -480,8 +480,9 @@ class Webportal:
         ENDPOINT = "/studentchoiceprint/getsubjectpreference"
         payload_dict = {
             "instituteid": self.session.instituteid,
-            "studentid": self.session.memberid,
+            "clientid": self.session.clientid,
             "registrationid": semester.registration_id,
         }
-        resp = self.__hit("POST", API + ENDPOINT, json=payload_dict, authenticated=True)
+        payload = serialize_payload(payload_dict)
+        resp = self.__hit("POST", API + ENDPOINT, json=payload, authenticated=True)
         return resp["response"]
